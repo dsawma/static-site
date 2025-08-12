@@ -2,18 +2,17 @@ import pathlib
 import shutil
 from textnode import TextNode, TextType
 import os
+import sys
 from block import extract_title, markdown_to_html_node
 
 def main():
-    new = TextNode("Hi", TextType.CODE)
-    print(new)
+    if len(sys.argv) > 1:
+        basepath = sys.argv[1]
+    else:
+        basepath = "/"
 
-    # remove the public directory
-    if os.path.isdir("./public"):
-        shutil.rmtree("./public")
-    copy_static("./static", "./public")
-    generate_pages_recursive("./content", "./template.html", "./public")
     
+    generate_pages_recursive("./content", "./template.html", "./docs", basepath)
 
 def copy_static(src, dest):
     #if dest(public) doesn't exist, make it 
@@ -30,7 +29,7 @@ def copy_static(src, dest):
         else:
             copy_static(from_path, dest_path)
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     with open(from_path, 'r') as f1, open(template_path, 'r') as f2:
         rf1 = f1.read()
@@ -38,6 +37,7 @@ def generate_page(from_path, template_path, dest_path):
         content = markdown_to_html_node(rf1).to_html()
         title = extract_title(rf1)
         rf2 = rf2.replace("{{ Title }}", title).replace("{{ Content }}", content)
+        rf2 = rf2.replace('href="/', f'href="{basepath}').replace('src="/', f'src="{basepath}')
     
     dest_dir = os.path.dirname(dest_path)
     if dest_dir:
@@ -46,7 +46,7 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_path, 'w') as f3:
         f3.write(rf2)
     
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, root =None):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath, root =None):
     if root is None:
         root = dir_path_content
     for filename in os.listdir(dir_path_content):
@@ -59,10 +59,10 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, roo
                 dest = dest.with_suffix(".html")
                 if not os.path.exists(dest.parent):
                     os.makedirs(dest.parent, exist_ok=True)
-                generate_page(str(full_path), template_path, str(dest))
+                generate_page(str(full_path), template_path, str(dest), basepath)
     
         else:
-            generate_pages_recursive(str(full_path), template_path, dest_dir_path, root)
+            generate_pages_recursive(str(full_path), template_path, dest_dir_path, basepath, root)
 
 
 
