@@ -11,7 +11,12 @@ def main():
     else:
         basepath = "/"
 
-    
+    print("Deleting public directory...")
+    if os.path.exists("./docs"):
+        shutil.rmtree("./docs")
+
+    print("Copying static files to public directory...")
+    copy_static("./static", "./docs")
     generate_pages_recursive("./content", "./template.html", "./docs", basepath)
 
 def copy_static(src, dest):
@@ -37,7 +42,7 @@ def generate_page(from_path, template_path, dest_path, basepath):
         content = markdown_to_html_node(rf1).to_html()
         title = extract_title(rf1)
         rf2 = rf2.replace("{{ Title }}", title).replace("{{ Content }}", content)
-        rf2 = rf2.replace('href="/', f'href="{basepath}').replace('src="/', f'src="{basepath}')
+        rf2 = rf2.replace('href="/', 'href="' + basepath).replace('src="/', 'src="' + basepath)
     
     dest_dir = os.path.dirname(dest_path)
     if dest_dir:
